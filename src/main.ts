@@ -1,17 +1,11 @@
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { route } from "./presentation/api/routes.ts";
+import { Hono } from "@hono/hono";
+import routes from "./routes/v1/register_routes.ts";
+import * as Logger_Middleware_for_Hono_ from "@hono/hono/logger";
+import { Logger } from "tslog";
+const app = new Hono();
 
-const app = new OpenAPIHono();
+const logger = new Logger();
+// app.use(Logger_Middleware_for_Hono_.logger(logger.debug));
+app.route("/api", routes);
 
-// Add the route
-app.openapi(route, (c) => {
-  console.log("Request received");
-  return c.json({
-    id: 1,
-    age: 20,
-    name: "Ultra-man",
-  });
-});
-
-// Start the server
-Deno.serve(app.fetch);
+Deno.serve({ port: 8000 }, app.fetch);
