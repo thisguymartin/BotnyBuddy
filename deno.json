@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run --allow-net=:8000 --watch src/main.ts",
-    "build": "deno compile --allow-net=:8000 --output bin/main src/main.ts",
+    "dev": "deno run --allow-read --allow-net=:8000 --allow-sys --watch src/main.ts",
+    "build": "deno compile --allow-read --allow-net=:8000 --allow-sys --output bin/main src/main.ts",
     "check": "deno check . "
   },
   "imports": {

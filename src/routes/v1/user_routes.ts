@@ -1,6 +1,6 @@
 import { Hono } from "@hono/hono";
 import { Logger } from "tslog";
-const logger = new Logger({ name: "User" });
+const logger = new Logger({ name: "User", type: "json" });
 
 const user = new Hono();
 
