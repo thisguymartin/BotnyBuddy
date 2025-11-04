@@ -1,3 +1,37 @@
-bin
-node_modules
+## .NET Core
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.swp
+*.log
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+## NuGet
+*.nupkg
+*.snupkg
+**/packages/*
+
+## Environment files
 .env
+*.env
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+## IDE
+.idea/
+*.sln.iml
+.DS_Store
+
+## Node (legacy)
+node_modules
