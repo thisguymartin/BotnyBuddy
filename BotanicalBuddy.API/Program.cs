@@ -1,6 +1,8 @@
 using System.Text;
+using BotanicalBuddy.API.Data;
 using BotanicalBuddy.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -8,6 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
+
+// Configure Database
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Add Memory Cache
+builder.Services.AddMemoryCache();
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -75,7 +87,11 @@ builder.Services.AddAuthorization();
 
 // Register services
 builder.Services.AddHttpClient<TrefleApiService>();
+builder.Services.AddHttpClientFactory();
+builder.Services.AddScoped<CachedTrefleApiService>();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<WeatherService>();
 
 // Add CORS
 builder.Services.AddCors(options =>
