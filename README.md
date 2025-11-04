@@ -1,8 +1,10 @@
-# BotanicalBuddy.NET
+# BotanicalBuddy
 
-A plant tracking and identification API built with **ASP.NET Core 8.0**, integrating with the Trefle.io plant database.
+A comprehensive plant care and tracking SaaS platform built with **ASP.NET Core 8.0**. Track your plant collection, get location-based care recommendations, and learn optimal watering schedules based on local weather patterns.
 
-## Features
+> **🚧 Under Active Development**: Transforming into a production-ready SaaS application. See [CLAUDE_PLAN.md](./CLAUDE_PLAN.md) for the complete transformation roadmap.
+
+## Current Features (v1.0)
 
 - **Trefle API Integration**: Access to 500,000+ plant species data
 - **JWT Authentication**: Secure API authentication with Bearer tokens
@@ -10,6 +12,20 @@ A plant tracking and identification API built with **ASP.NET Core 8.0**, integra
 - **Plant Details**: Get comprehensive information about specific plants
 - **RESTful API**: Clean and well-documented REST endpoints with Swagger UI
 - **Built with .NET 8.0**: Modern, high-performance web API
+
+## Planned Features (v2.0)
+
+- **User Plant Collections**: Track your personal plant collection with photos and notes
+- **Location-Based Care**: Link plants to addresses for weather-aware care recommendations
+- **Smart Watering Schedules**: AI-powered watering recommendations based on plant type, weather, and historical data
+- **Pattern Analysis**: Learn from community data to discover best care practices for your location
+- **Subscription Tiers**: Free, Basic, and Premium plans with increasing features
+- **Weather Integration**: Automatic weather tracking for optimal plant care
+- **PostgreSQL Database**: Full data persistence with Entity Framework Core
+- **Docker Deployment**: Production-ready containerization for Fly.io
+- **In-Memory Caching**: Fast API responses with intelligent caching
+
+See the complete [transformation plan](./CLAUDE_PLAN.md) for detailed feature roadmap.
 
 ## Quick Start
 
