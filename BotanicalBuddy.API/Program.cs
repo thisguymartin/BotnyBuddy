@@ -87,7 +87,6 @@ builder.Services.AddAuthorization();
 
 // Register services
 builder.Services.AddHttpClient<TrefleApiService>();
-builder.Services.AddHttpClientFactory();
 builder.Services.AddScoped<CachedTrefleApiService>();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<UserService>();
