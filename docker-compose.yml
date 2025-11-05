@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: botanicalbuddy-postgres
+    environment:
+      POSTGRES_DB: botanicalbuddy
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - botanicalbuddy-network
+
+  # pgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: botanicalbuddy-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@botanicalbuddy.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - botanicalbuddy-network
+    profiles:
+      - tools
+
+  # BotanicalBuddy API (optional - for full stack development)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: botanicalbuddy-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=botanicalbuddy;Username=postgres;Password=postgres
+      - Jwt__Secret=local-dev-secret-key-minimum-32-characters-required-for-security
+      - Jwt__Issuer=BotanicalBuddy.API
+      - Jwt__Audience=BotanicalBuddy.API
+      - Trefle__ApiToken=${TREFLE_API_TOKEN:-your-trefle-api-token-here}
+      - WeatherApi__ApiKey=${WEATHER_API_KEY:-your-weather-api-key-here}
+      - WeatherApi__BaseUrl=https://api.openweathermap.org/data/2.5
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - botanicalbuddy-network
+    profiles:
+      - fullstack
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  botanicalbuddy-network:
+    driver: bridge

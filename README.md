@@ -66,38 +66,76 @@ See the complete [transformation plan](./CLAUDE_PLAN.md) for detailed feature ro
 
 ## Quick Start
 
-### Prerequisites
+### Option 1: Docker Compose (Recommended)
+
+The easiest way to get started without installing PostgreSQL locally:
+
+```bash
+# 1. Start PostgreSQL with Docker
+docker-compose up -d postgres
+
+# 2. Run migrations
+cd BotanicalBuddy.API
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+
+# 3. Run the API
+dotnet run
+
+# 4. Access Swagger UI at https://localhost:5001
+```
+
+See [DOCKER_QUICKSTART.md](./DOCKER_QUICKSTART.md) for detailed instructions.
+
+### Option 2: Manual Setup
+
+#### Prerequisites
 
 - .NET 8.0 SDK or later
+- PostgreSQL 15+ installed locally
 - Trefle.io API token ([get one here](https://trefle.io/))
+- OpenWeatherMap API key ([get one here](https://openweathermap.org/api))
 
-### Setup
+#### Setup
 
-1. **Configure settings**:
+1. **Create database**:
+   ```bash
+   createdb botanicalbuddy
+   ```
+
+2. **Configure settings**:
    Edit `BotanicalBuddy.API/appsettings.json`:
    ```json
    {
+     "ConnectionStrings": {
+       "DefaultConnection": "Host=localhost;Database=botanicalbuddy;Username=postgres;Password=yourpassword"
+     },
      "Jwt": {
        "Secret": "your-secret-key-at-least-32-characters-long"
      },
-     "Auth": {
-       "ApiKey": "demo-api-key"
-     },
      "Trefle": {
        "ApiToken": "your-trefle-api-token-here"
+     },
+     "WeatherApi": {
+       "ApiKey": "your-weather-api-key-here"
      }
    }
    ```
 
-2. **Run the application**:
+3. **Run migrations**:
    ```bash
    cd BotanicalBuddy.API
-   dotnet restore
+   dotnet ef migrations add InitialCreate
+   dotnet ef database update
+   ```
+
+4. **Run the application**:
+   ```bash
    dotnet run
    ```
 
-3. **Access Swagger UI**:
-   Navigate to `http://localhost:5000` to see the interactive API documentation.
+5. **Access Swagger UI**:
+   Navigate to `https://localhost:5001` to see the interactive API documentation.
 
 ## API Documentation
 
