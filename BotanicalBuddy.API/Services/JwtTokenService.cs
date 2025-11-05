@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using BotanicalBuddy.API.Data.Entities;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BotanicalBuddy.API.Services;
@@ -44,6 +45,40 @@ public class JwtTokenService
         );
 
         _logger.LogInformation("Token generated for user: {Username}", username);
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    /// <summary>
+    /// Generate a JWT token for a user entity with subscription tier
+    /// </summary>
+    public string GenerateTokenForUser(User user, int expirationHours = 24)
+    {
+        var jwtSecret = _configuration["Jwt:Secret"] ?? throw new ArgumentNullException("Jwt:Secret is not configured");
+        var jwtIssuer = _configuration["Jwt:Issuer"] ?? "BotanicalBuddy.API";
+        var jwtAudience = _configuration["Jwt:Audience"] ?? "BotanicalBuddy.API";
+
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Name, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("subscription_tier", user.SubscriptionTier),
+            new Claim("email_verified", user.EmailVerified.ToString())
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: jwtIssuer,
+            audience: jwtAudience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(expirationHours),
+            signingCredentials: credentials
+        );
+
+        _logger.LogInformation("Token generated for user: {Email} (ID: {UserId})", user.Email, user.Id);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 

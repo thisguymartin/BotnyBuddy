@@ -1,5 +1,6 @@
 using BotanicalBuddy.API.Models;
 using BotanicalBuddy.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BotanicalBuddy.API.Controllers;
@@ -9,15 +10,18 @@ namespace BotanicalBuddy.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly JwtTokenService _jwtTokenService;
+    private readonly UserService _userService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         JwtTokenService jwtTokenService,
+        UserService userService,
         IConfiguration configuration,
         ILogger<AuthController> logger)
     {
         _jwtTokenService = jwtTokenService;
+        _userService = userService;
         _configuration = configuration;
         _logger = logger;
     }
@@ -170,6 +174,187 @@ public class AuthController : ControllerBase
                 Error = "Invalid token",
                 Message = ex.Message
             });
+        }
+    }
+
+    /// <summary>
+    /// Register a new user
+    /// </summary>
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new AuthResponse
+                {
+                    Success = false,
+                    Error = "Invalid input",
+                    Message = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
+                });
+            }
+
+            var user = await _userService.CreateUserAsync(
+                request.Email,
+                request.Password,
+                request.FirstName,
+                request.LastName
+            );
+
+            var token = _jwtTokenService.GenerateTokenForUser(user);
+
+            _logger.LogInformation("New user registered: {Email}", user.Email);
+
+            return Ok(new AuthResponse
+            {
+                Success = true,
+                Token = token,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    SubscriptionTier = user.SubscriptionTier,
+                    EmailVerified = user.EmailVerified,
+                    CreatedAt = user.CreatedAt
+                },
+                Message = "Registration successful"
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning("Registration failed: {Error}", ex.Message);
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Error = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during registration");
+            return StatusCode(500, new AuthResponse
+            {
+                Success = false,
+                Error = "Registration failed",
+                Message = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Login with email and password
+    /// </summary>
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new AuthResponse
+                {
+                    Success = false,
+                    Error = "Invalid input"
+                });
+            }
+
+            var user = await _userService.GetUserByEmailAsync(request.Email);
+            if (user == null)
+            {
+                _logger.LogWarning("Login attempt for non-existent user: {Email}", request.Email);
+                return Unauthorized(new AuthResponse
+                {
+                    Success = false,
+                    Error = "Invalid email or password"
+                });
+            }
+
+            if (!_userService.VerifyPassword(user, request.Password))
+            {
+                _logger.LogWarning("Invalid password attempt for user: {Email}", request.Email);
+                return Unauthorized(new AuthResponse
+                {
+                    Success = false,
+                    Error = "Invalid email or password"
+                });
+            }
+
+            var token = _jwtTokenService.GenerateTokenForUser(user);
+
+            _logger.LogInformation("User logged in: {Email}", user.Email);
+
+            return Ok(new AuthResponse
+            {
+                Success = true,
+                Token = token,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    SubscriptionTier = user.SubscriptionTier,
+                    EmailVerified = user.EmailVerified,
+                    CreatedAt = user.CreatedAt
+                },
+                Message = "Login successful"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during login");
+            return StatusCode(500, new AuthResponse
+            {
+                Success = false,
+                Error = "Login failed",
+                Message = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Get current user profile
+    /// </summary>
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { error = "Invalid token" });
+            }
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { error = "User not found" });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                user = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    SubscriptionTier = user.SubscriptionTier,
+                    EmailVerified = user.EmailVerified,
+                    CreatedAt = user.CreatedAt
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting current user");
+            return StatusCode(500, new { error = "Failed to get user profile" });
         }
     }
 }
